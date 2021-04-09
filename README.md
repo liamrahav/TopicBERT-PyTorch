@@ -20,11 +20,12 @@ This will create a Python environment that strictly adheres to the versioning in
     - Completed on 4/8/21, Liam
 - [ ] Reuters8 Dataset & DataLoader set up
     - In progress, some work on 4/8/21, Liam
+    - Uploaded original dataset from paper, 4/9/21, Liam
 - [ ] BERT doing standalone prediction on Reuters8
 - [ ] Set up NVDM topic model on some dataset
 - [ ] NVDM working on Reuters8
 - [ ] Create joint model (TopicBERT)
-- [ ] Achieve near baaselines with TopicBERT
+- [ ] Achieve near baselines with TopicBERT
 - [ ] Move from Jupyter to Python modules
 
 Once we're here, it means we are ready to begin working on novel extensions.
