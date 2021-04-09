@@ -18,9 +18,9 @@ This will create a Python environment that strictly adheres to the versioning in
 
 - [X] Have working BERT on some dataset (SST-2)
     - Completed on 4/8/21, Liam
-- [ ] Reuters8 Dataset & DataLoader set up
+- [X] Reuters8 Dataset & DataLoader set up
     - In progress, some work on 4/8/21, Liam
-    - Uploaded original dataset from paper, 4/9/21, Liam
+    - Dataset & DataLoader done on 4/9/21, Liam
 - [ ] BERT doing standalone prediction on Reuters8
 - [ ] Set up NVDM topic model on some dataset
 - [ ] NVDM working on Reuters8
@@ -29,3 +29,13 @@ This will create a Python environment that strictly adheres to the versioning in
 - [ ] Move from Jupyter to Python modules
 
 Once we're here, it means we are ready to begin working on novel extensions.
+
+
+-----
+
+## Differences
+
+This section maintains a (non-definitive) list of differences between the original implementation and this repository's code.
+
+- `F_MIN` is set to `7`  rather than `10` in preprocessing Reuters8. The original authors may have already preprocessed the entire corpus instead of each dataset (train, val, test). Our experiments show `K = ~19,000` where `K` is vocab size, and `F_MIN = 7` yields the desired `K = ~4800`.
+- The original authors use `bert-base-cased`. As all data is lowercased across datasets in the original experiments, we change this to `bert-base-uncased`.
