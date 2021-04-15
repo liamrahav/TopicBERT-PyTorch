@@ -11,6 +11,9 @@ conda env create -f environment.yml
 
 This will create a Python environment that strictly adheres to the versioning indicated in the [project proposal](https://drive.google.com/file/d/1oEE8oxiM95Tf99SxUhPXgZj3GkotFtlM/view). It is intended to closely mirror Google Colab.
 
+**Alternatively**, open `experiment.ipynb` in Google Colab: [<img src="https://colab.research.google.com/assets/colab-badge.svg" align="center">](https://colab.research.google.com/github/liamrahav/TopicBERT-PyTorch/blob/main/experiment.ipynb)
+
+
 
 ------
 
