@@ -41,7 +41,7 @@ Once we're here, it means we are ready to begin working on novel extensions.
 
 This section maintains a (non-definitive) list of differences between the original implementation and this repository's code.
 
-- `F_MIN` is set to `10` on Reuters8 dataset yields a vocab size of `K = 4832` rather than `K = 4813` reported in the original paper, despite following the same text-cleaning guidelines. We assume this will not significantly affect results.
+- `F_MIN` set to `10` on Reuters8 dataset yields a vocab size of `K = 4832` rather than `K = 4813` reported in the original paper, despite following the same text-cleaning guidelines. We assume this will not significantly affect results.
 - The original authors use `bert-base-cased`. As all data is lowercased across datasets in the original experiments, we change this to `bert-base-uncased`.
 - Labels are encoded one-hot. We use `torch.max(...)[1]` to extract prediction & label indices. These indices can be converted back and forth with label strings via the `Reuters8Dataset` class (`dataset.label_mapping[index]` and `dataset.label_mapping[label_str]`).
 - NVDM in the original paper uses `tanh` activation for multiliayer perceptron. However, the author's TensorFlow implementation uses `sigmoid`. We stick with `tanh`, as the NVDM paper ([Miao et al. 2016](https://arxiv.org/pdf/1511.06038.pdf)) uses this as well.
