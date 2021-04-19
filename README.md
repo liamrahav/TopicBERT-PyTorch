@@ -26,10 +26,14 @@ This will create a Python environment that strictly adheres to the versioning in
 - [X] Set up NVDM topic model on some dataset
 - [X] NVDM working on Reuters8
     - Done — error behaves as expected when training, needs further analysis, 4/18/21, Liam
-- [ ] Create joint model (TopicBERT)
-- [ ] Achieve near baselines with TopicBERT
+- [X] Create joint model (TopicBERT)
+    - Coding complete, 4/19/21, Liam
+- [X] Achieve near baselines with TopicBERT
+    - We achieve 0.96 F1 score on Reuters8 with TopicBERT-512, outperforming the original paper marginally. See differences section for potental factors.
+    - Done, 4/19/21, Liam
 - [ ] Move from Jupyter to Python modules
 - [ ] Measure performance on same hadware as original paper
+- [ ] Establih baselines on other datasets (IMDB, 20NS, Ohsumed)
 
 Once we're here, it means we are ready to begin working on novel extensions.
 
@@ -43,3 +47,4 @@ This section maintains a (non-definitive) list of differences between the origin
 - The original authors use `bert-base-cased`. As all data is lowercased across datasets in the original experiments, we change this to `bert-base-uncased`.
 - Labels are encoded one-hot. We use `torch.max(...)[1]` to extract prediction & label indices. These indices can be converted back and forth with label strings via the `Reuters8Dataset` class (`dataset.label_mapping[index]` and `dataset.label_mapping[label_str]`).
 - NVDM in the original paper uses `tanh` activation for multiliayer perceptron in NVDM. However, the author's TensorFlow implementation uses `sigmoid`. We stick with `tanh`, as the NVDM paper ([Miao et al. 2016](https://arxiv.org/pdf/1511.06038.pdf)) uses this as well.
+- TopicBERT as described in the paper has a projection layer consisting of a single matrix $\mathbf{P} \in \mathbf{R}^{\hat{H} \times H_B}$. We stick with this architecture. The original author's TensorFlow implementation utilizes a `tf.keras.layers.Dense` layer, which adds a bias vector and GELU activation after $\mathbf{P}$.
