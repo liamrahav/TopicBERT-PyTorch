@@ -1,0 +1,17 @@
+name: topicbert
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - sphinx=3.5.4=pyhd3eb1b0_0
+  - sphinxcontrib=1.0=py37_1
+  - sphinxcontrib-applehelp=1.0.2=pyhd3eb1b0_0
+  - sphinxcontrib-devhelp=1.0.2=pyhd3eb1b0_0
+  - sphinxcontrib-htmlhelp=1.0.3=pyhd3eb1b0_0
+  - sphinxcontrib-jsmath=1.0.1=pyhd3eb1b0_0
+  - sphinxcontrib-qthelp=1.0.3=pyhd3eb1b0_0
+  - sphinxcontrib-serializinghtml=1.1.4=pyhd3eb1b0_0
+  - sphinxcontrib-websupport=1.2.4=py_0
+  - sphinx-copybutton=0.3.1=pyhd8ed1ab_0
+  - pip:
+    - furo==2021.4.11b34

@@ -32,6 +32,8 @@ This will create a Python environment that strictly adheres to the versioning in
     - We achieve 0.96 F1 score on Reuters8 with TopicBERT-512, outperforming the original paper marginally. See differences section for potental factors.
     - Done, 4/19/21, Liam
 - [ ] Move from Jupyter to Python modules
+    - All "modules" converted, 4/25/21, Liam. 
+    - **TODO**: Create package for training scripts controllable from some `main.py` with command line arguments.
 - [ ] Measure performance on same hadware as original paper
 - [ ] Establih baselines on other datasets (IMDB, 20NS, Ohsumed)
 
