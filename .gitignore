@@ -133,3 +133,10 @@ dmypy.json
 
 # Editor
 .vscode/
+
+# Model checkpoints/config
+checkpoints/
+config.json
+
+# tensorboard
+runs/

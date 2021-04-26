@@ -11,6 +11,11 @@ conda env create -f environment.yml
 
 This will create a Python environment that strictly adheres to the versioning indicated in the [project proposal](https://drive.google.com/file/d/1oEE8oxiM95Tf99SxUhPXgZj3GkotFtlM/view). It is intended to closely mirror Google Colab.
 
+Then train the model via `main.py`. There are many options that can be set, run `python main.py -h` to see more.
+
+One particularly helpful option is `-s PATH` or `--save PATH`, which saves the given options as a JSON file that
+can easily be used again with `--load PATH`.
+
 **Alternatively**, open `experiment.ipynb` in Google Colab: [<img src="https://colab.research.google.com/assets/colab-badge.svg" align="center">](https://colab.research.google.com/github/liamrahav/TopicBERT-PyTorch/blob/main/experiment.ipynb)
 
 ------
@@ -31,11 +36,10 @@ This will create a Python environment that strictly adheres to the versioning in
 - [X] Achieve near baselines with TopicBERT
     - We achieve 0.96 F1 score on Reuters8 with TopicBERT-512, outperforming the original paper marginally. See differences section for potental factors.
     - Done, 4/19/21, Liam
-- [ ] Move from Jupyter to Python modules
+- [X] Move from Jupyter to Python modules
     - All "modules" converted, 4/25/21, Liam. 
-    - **TODO**: Create package for training scripts controllable from some `main.py` with command line arguments.
+    - `training` package and `main.py` complete, 4/26/21, Liam.
 - [ ] Measure performance on same hadware as original paper
-- [ ] Establih baselines on other datasets (IMDB, 20NS, Ohsumed)
 
 Once we're here, it means we are ready to begin working on novel extensions.
 

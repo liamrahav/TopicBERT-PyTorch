@@ -16,10 +16,14 @@ class BOWDataset(Dataset):
         tokenizer (:obj:`transformers.PreTrainedTokenizer`): A pretrained
             `bert-base-uncased` tokenizer from 🤗.
         vocab (:obj:`Vocabulary`): The vocabulay associated with the dataset.
+        labels (:obj:`list` of :obj:`Any`): A list of all labels an example
+            could take.
 
     Args:
       dataset (:obj:`torch.utils.data.Dataset`): The dataset to convert to BOW.
-        Expects the dataset to yield `(sentence, label)` pairs.
+        Expects the dataset to yield `(sentence, label)` pairs. Expects the the
+        dataset to have attribute `labels`, an :obj:`Iterable` with the
+        possible labels for any example.
       vocab (:obj:`Vocabulary`): The vocabulay associated with the dataset.
       binary (:obj:`bool`, optional): Whether the BOW should maintain a binary
         representation. If `False`, it will contain word frequencies (integers).
@@ -29,6 +33,7 @@ class BOWDataset(Dataset):
     def __init__(self, dataset, vocab, binary=False):
         self.vocab = vocab
         self.examples = []
+        self.labels = list(dataset.labels)
         for sent, label in dataset:
             bow = torch.zeros((len(vocab),), dtype=torch.long)
             for word in sent.split(' '):
@@ -59,6 +64,11 @@ class BOWDataset(Dataset):
         '''
         return DataLoader(self, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers,
                           collate_fn=BOWDataset._collate_fn)
+
+    @property
+    def num_labels(self):
+        '''int: useful when instantiating PyTorch modules.'''
+        return len(self.labels)
 
     def __getitem__(self, index):
         return self.examples[index]

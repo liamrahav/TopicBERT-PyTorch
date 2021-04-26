@@ -30,9 +30,9 @@ class TopicBERT(nn.Module):
         self.nvdm = NVDM(vocab_size)
         self.projection = nn.Sequential(
             nn.Linear(self.encoder.config.hidden_size + self.nvdm.num_topics,
-                      self.nvdm.num_topics, bias=False),
+                      self.encoder.config.hidden_size, bias=False),
             # nn.GELU() # This is NOT used in paper, but it is used in TF source...
-            nn.Linear(self.nvdm.num_topics, num_labels)
+            nn.Linear(self.encoder.config.hidden_size, num_labels)
         )
         self.projection.apply(TopicBERT._get_init_transformer(self.encoder))
 
