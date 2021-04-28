@@ -13,15 +13,13 @@ import time
 
 from prefetch_generator import BackgroundGenerator
 from sklearn.metrics import f1_score
-from tensorboardX import SummaryWriter
 import torch
 from torch import nn
 from tqdm import tqdm
 from transformers import AdamW, get_linear_schedule_with_warmup
 
 from models import TopicBERT
-
-writer = SummaryWriter()
+from training.utils import save_ckpt, load_ckpt
 
 
 def _configure_optimization(model, num_train_steps, num_warmup_steps, lr, weight_decay=0.01):
@@ -37,19 +35,14 @@ def _configure_optimization(model, num_train_steps, num_warmup_steps, lr, weight
     return optimizer, scheduler
 
 
-def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, num_epochs=10, clip=1., device='cpu',
-          val_frequency=0., val_dataset=None, test_frequency=0., test_dataset=None, num_workers=8,
-          load_ckpt=False, ckpt_dir=None, tensorboard=True, verbose=True, silent=False):
+def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, alpha=0.9, num_epochs=10, clip=1.,
+          device='cpu', val_frequency=0., val_dataset=None, test_frequency=0., test_dataset=None,
+          num_workers=8, should_load_ckpt=False, ckpt_dir=None, tensorboard=True, tensorboard_dir=None,
+          verbose=True, silent=False):
     '''Main training loop for TopicBERT.
 
     TODO:
         Add logic for val & test datasets.
-
-    TODO:
-        Add logic for saving & loading the model from checkpoints
-
-    TODO:
-        Only import & use Tensorboardx if the flag is true
 
     Args:
         dataset (:obj:`datasets.BOWDataset`): The dataset to train on wrapped as a :obj:`BOWDataset`.
@@ -59,6 +52,7 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, num_epochs=10, cl
             transformer scheduler.
         lr (:obj:`int`, optional): Set to :obj:`2e-5` by default. Learning rate to be passed to :obj:`AdamW`
             optimizer.
+        alpha (:obj:`int`, optional): Defaults to :obj:`0.9`. See :obj:`TopicBERT` for more information.
         num_epochs (:obj:`int`, optional): Set to :obj:`10` by default. Number of epochs to train for.
         clip (:obj:`float`, optional): Set to :obj:`1.0` by defualt. Training uses optional gradient clipping
             *by norm*. This means gradients are rescaled with :math:`\\mathbf{g} \\leftarrow \\text{clip}
@@ -76,12 +70,14 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, num_epochs=10, cl
             :obj:`test_frequency` > 0, then a validation dataset must be provided.
         num_workers (:obj:`int`, otional): Set to :obj:`8` by default. The number of workers to use for the
             dataloader.
-        load_ckpt (:obj:`bool`, optional): Set to :obj:`False` by default. If :obj:`True`, :obj:`ckpt_dir`
-            must be provided, and a model will be loaded from :obj:`ckpt_dir`.
+        should_load_ckpt (:obj:`bool`, optional): Set to :obj:`False` by default. If :obj:`True`,
+            :obj:`ckpt_dir` must be provided, and a model will be loaded from :obj:`ckpt_dir`.
         ckpt_dir (:obj:`str`, optional): Set to :obj:`None` by default. If set, after each epoch a copy of the
             model will be kept in :obj:`ckpt_dir`.
-        tensorboard (:obj:`bool`, optional): Set to :obj:`True` by default. Whether or not to use PyTorch's
-            tensorboard.
+        tensorboard (:obj:`bool`, optional): Set to :obj:`True` by default. Whether or not to use
+            tensorboardx.
+        tensorboard_dir (:obj:`str`, optional): Set to :obj:`None` by default. Places tensoboard output in
+            the specified directory.
         verbose (:obj:`bool`, optional): Set to :obj:`True` by default. Controls verbosity of console output
             when running.
         silent (:obj:`bool`, optional): Set to :obj:`False` by default. If True, nothing will be outputted
@@ -107,9 +103,15 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, num_epochs=10, cl
         f = open(os.devnull, 'w')
         sys.stdout = f
 
+    writer = None
+    if tensorboard:
+        from tensorboardX import SummaryWriter
+        writer = SummaryWriter(tensorboard_dir)
+
     # TRAIN LOGIC:
     # ============
-    model = TopicBERT(len(dataset.vocab), dataset.num_labels).to(device)
+    model = TopicBERT(len(dataset.vocab), dataset.num_labels,
+                      alpha=alpha).to(device)
     dataloader = dataset.get_dataloader(num_workers=num_workers)
     total_train_steps = len(dataset) // batch_size * num_epochs
     optimizer, scheduler = _configure_optimization(
@@ -117,16 +119,17 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, num_epochs=10, cl
 
     n_iter = 0
     start_epoch = 0
-    # # Load from checkpoint if needed
-    # if load_ckpt:
-    #     ckpt = load_checkpoint(ckpt_path)
-    #     model.load_state_dict(ckpt['net'])
-    #     start_epoch = ckpt['epoch']
-    #     n_iter = ckpt['n_iter']
-    #     optimizer.load_state_dict(ckpt['optim'])
-    #     scheduler.load_state_dict(ckpt['sched'])
-    #     if verbose:
-    #         print(" [*] Finished loading model from checkpoint.")
+
+    # Load from checkpoint if needed
+    if should_load_ckpt:
+        ckpt = load_ckpt(ckpt_dir)
+        model.load_state_dict(ckpt['net'])
+        start_epoch = ckpt['epoch']
+        n_iter = ckpt['n_iter']
+        optimizer.load_state_dict(ckpt['optim'])
+        scheduler.load_state_dict(ckpt['sched'])
+        if verbose:
+            print(" [*] Finished loading model from checkpoint.")
 
     loss_avg = float('inf')
     acc_train = 0.
@@ -142,7 +145,7 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, num_epochs=10, cl
                     total=len(dataloader))
         start_time = time.time()
 
-        for batch_ind, (input_ids, attention_mask, bows, labels) in pbar:
+        for _, (input_ids, attention_mask, bows, labels) in pbar:
             # Move all data to appropriate device
             input_ids = input_ids.to(device).long()
             attention_mask = attention_mask.to(device)
@@ -194,15 +197,15 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, num_epochs=10, cl
             )
 
         # Save model if ckpt_dir is set every epoch
-        # if ckpt_dir:
-        #     cpkt = {
-        #         'net': model.state_dict(),
-        #         'epoch': epoch,
-        #         'n_iter': n_iter,
-        #         'optim': optimizer.state_dict(),
-        #         'sched': scheduler.state_dict()
-        #     }
-        #     save_checkpoint(cpkt, ckpt_dir)
+        if ckpt_dir:
+            cpkt = {
+                'net': model.state_dict(),
+                'epoch': epoch + 1,
+                'n_iter': n_iter,
+                'optim': optimizer.state_dict(),
+                'sched': scheduler.state_dict()
+            }
+            save_ckpt(cpkt, ckpt_dir)
 
     if silent:
         # Reset stdout before function exit

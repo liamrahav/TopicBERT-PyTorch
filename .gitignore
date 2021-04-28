@@ -136,7 +136,8 @@ dmypy.json
 
 # Model checkpoints/config
 checkpoints/
-config.json
+config*.json
+configs/
 
 # tensorboard
 runs/

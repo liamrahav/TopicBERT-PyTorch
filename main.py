@@ -76,6 +76,15 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
+        '--alpha',
+        metavar='[0, 1]',
+        type=float,
+        default=0.9,
+        help='Controls how much TopicBERT should weight its own loss or its topic model\'s loss'\
+            ' Must be between 0 and 1. (default: 0.9)'
+    )
+
+    parser.add_argument(
         '--num-epochs', '--epochs',
         type=int,
         default=10,
@@ -139,6 +148,11 @@ if __name__ == '__main__':
         '--disable-tensorboard',
         action='store_true',
         help='If set, disables PyTorch\'s Tensorboard for training visualization'
+    )
+
+    parser.add_argument(
+        '--tensorboard-dir',
+        help='Directory to place the tensorboard logs in.'
     )
 
     parser.add_argument(
@@ -220,6 +234,7 @@ if __name__ == '__main__':
         batch_size=opts['batch_size'],
         num_warmup_steps=opts['warmup_steps'],
         lr=opts['lr'],
+        alpha=opts['alpha'],
         num_epochs=opts['num_epochs'],
         clip=opts['clip'],
         device=opts['device'],
@@ -228,7 +243,7 @@ if __name__ == '__main__':
         test_frequency=opts['test_freq'],
         test_dataset=test_dataset,
         num_workers=opts['num_workers'],
-        load_ckpt=load_ckpt,
+        should_load_ckpt=load_ckpt,
         ckpt_dir=opts['resume'],
         tensorboard=tensorboard,
         verbose=verbose,

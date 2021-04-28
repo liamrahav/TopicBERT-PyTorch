@@ -16,6 +16,39 @@ Then train the model via `main.py`. There are many options that can be set, run 
 One particularly helpful option is `-s PATH` or `--save PATH`, which saves the given options as a JSON file that
 can easily be used again with `--load PATH`.
 
+Sample `config.json`:
+
+```json
+{
+    "dataset": "reuters8",
+    "label_path": ".../labels.txt",
+    "train_dataset_path": ".../training.tsv",
+    "val_dataset_path": ".../validation.tsv",
+    "test_dataset_path": ".../test.tsv",
+    "num_workers": 8,
+    "batch_size": 16,
+    "warmup_steps": 10,
+    "lr": 2e-05,
+    "alpha": 0.9,
+    "num_epochs": 2,
+    "clip": 1.0,
+    "seed": 42,
+    "device": "cuda",
+    "val_freq": 0.0,
+    "test_freq": 0.0,
+    "disable_tensorboard": false,
+    "tensorboard_dir": "runs/topicbert-512",
+    // directory where checkpoints should be
+    "resume": ".../checkpoints/", 
+    // whether to look for a checkpoint in above or just save a new one there
+    "save_checkpoint_only": true, 
+    "verbose": true,
+    "silent": false,
+    "load": null,
+    "save": "config.json"
+}
+```
+
 **Alternatively**, open `experiment.ipynb` in Google Colab: [<img src="https://colab.research.google.com/assets/colab-badge.svg" align="center">](https://colab.research.google.com/github/liamrahav/TopicBERT-PyTorch/blob/main/experiment.ipynb)
 
 ------
@@ -39,7 +72,7 @@ can easily be used again with `--load PATH`.
 - [X] Move from Jupyter to Python modules
     - All "modules" converted, 4/25/21, Liam. 
     - `training` package and `main.py` complete, 4/26/21, Liam.
-- [ ] Measure performance on same hadware as original paper
+- [ ] Measure performance baselines
 
 Once we're here, it means we are ready to begin working on novel extensions.
 
