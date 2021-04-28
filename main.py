@@ -123,6 +123,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--resume', '--use-checkpoint', '--load-checkpoint',
         metavar='CHECKPOINT_DIR',
+        default='',
         help='If provided, resumes training from the given checkpoint directory. Use'\
             ' --save-checkpoint-only to just save (no load).'
     )

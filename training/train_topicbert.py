@@ -13,9 +13,9 @@ import time
 
 from prefetch_generator import BackgroundGenerator
 from sklearn.metrics import f1_score
+from tensorboardX import SummaryWriter
 import torch
 from torch import nn
-from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from transformers import AdamW, get_linear_schedule_with_warmup
 
@@ -47,6 +47,9 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, num_epochs=10, cl
 
     TODO:
         Add logic for saving & loading the model from checkpoints
+
+    TODO:
+        Only import & use Tensorboardx if the flag is true
 
     Args:
         dataset (:obj:`datasets.BOWDataset`): The dataset to train on wrapped as a :obj:`BOWDataset`.
@@ -206,7 +209,6 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, num_epochs=10, cl
         sys.stdout = std_out
 
     if tensorboard:
-        writer.flush()
         writer.close()
 
     return
