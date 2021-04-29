@@ -38,3 +38,18 @@ def load_ckpt(ckpt_dir, ckpt_tag=''):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         return torch.load(os.path.join(ckpt_dir, 'checkpoint{}.pt'.format(ckpt_tag)))
+
+
+def get_emptiest_gpu():
+    mf = 0
+    mf_id = 0
+    for i in range(torch.cuda.device_count()):
+        r = torch.cuda.memory_reserved(i)
+        a = torch.cuda.memory_allocated(i)
+        f = r-a
+
+        if f > mf:
+            mf = f
+            mf_id = i
+
+    return mf_id

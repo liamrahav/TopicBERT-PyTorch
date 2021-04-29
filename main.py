@@ -113,20 +113,18 @@ if __name__ == '__main__':
 
     parser.add_argument(
         '--val-freq',
-        type=float,
-        metavar='[0, 1]',
-        default=0.,
+        type=int,
+        default=0,
         help='How frequently in terms of epochs to gather the model\'s validation set metrics'\
-            ' Must be between 0 and 1. (default: 0.0)'
+            ' (default: 0.0)'
     )
 
     parser.add_argument(
         '--test-freq',
-        type=float,
-        metavar='[0, 1]',
-        default=0.,
+        type=int,
+        default=0,
         help='How frequently in terms of epochs to gather the model\'s test set metrics'\
-            ' Must be between 0 and 1. (default: 0.0)'
+            ' (default: 0.0)'
     )
 
     parser.add_argument(
@@ -246,6 +244,7 @@ if __name__ == '__main__':
         should_load_ckpt=load_ckpt,
         ckpt_dir=opts['resume'],
         tensorboard=tensorboard,
+        tensorboard_dir=opts['tensorboard_dir'],
         verbose=verbose,
         silent=opts['silent']
     )

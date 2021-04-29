@@ -18,7 +18,7 @@ can easily be used again with `--load PATH`.
 
 Sample `config.json`:
 
-```json
+```js
 {
     "dataset": "reuters8",
     "label_path": ".../labels.txt",

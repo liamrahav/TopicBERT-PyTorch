@@ -10,7 +10,7 @@ class NVDM(nn.Module):
     Args:
         vocab_size (int): The vocabulary size that will be used for the BOW's (how long the BOW
             vectors will be).
-        num_topics (:obj:`int`, optional): Set to `50` by default. The number of latent topics
+        num_topics (:obj:`int`, optional): Set to `100` by default. The number of latent topics
             to maintain. Corresponds to hidden vector dimensionality `K` in the technical writing.
         hidden_size(:obj:`int`, optional): Set to `256` by default. The number of hidden units to
             include in each layer of the multilayer perceptron (MLP).
@@ -28,7 +28,7 @@ class NVDM(nn.Module):
         if isinstance(module, nn.Linear) and module.bias is not None:
             module.bias.data.zero_()
 
-    def __init__(self, vocab_size, num_topics=50, hidden_size=256, hidden_layers=1, nonlinearity=nn.Tanh):
+    def __init__(self, vocab_size, num_topics=100, hidden_size=256, hidden_layers=1, nonlinearity=nn.Tanh):
         super().__init__()
         self.num_topics = num_topics
         self.vocab_size = vocab_size
