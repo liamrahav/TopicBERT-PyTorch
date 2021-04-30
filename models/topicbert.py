@@ -14,21 +14,23 @@ class TopicBERT(nn.Module):
     Args:
         vocab_size (int): The vocabulary size to use for the BOW topic model component.
         num_labels (int): The number of labels that there are to classify.
-        alpha (:obj:`int`, optional): Defaults to `0.9`. Controls how much to weight
+        alpha (:obj:`float`, optional): Defaults to `0.9`. Controls how much to weight
             the cross-entropy loss on top of BERT with the topic model's own loss by the
             following formulation:
 
             .. math::
 
                 \mathcal{L} = \\alpha\log{p(y=y_l|\mathcal{D})} + (1 -  \\alpha)\mathcal{L}_{\\text{TM}}
-
+        dropout (:obj:`float`, optional): Defaults to `0.1`. Applies the provided `dropout
+        <https://jmlr.org/papers/v15/srivastava14a.html>`_ to the joint hidden state :math:`\mathbf{h}_p`.
     '''
-    def __init__(self, vocab_size, num_labels, alpha=0.9):
+    def __init__(self, vocab_size, num_labels, alpha=0.9, dropout=0.1):
         super().__init__()
         self.alpha = alpha
         self.encoder = BertModel.from_pretrained('bert-base-uncased')
         self.nvdm = NVDM(vocab_size)
         self.projection = nn.Sequential(
+            nn.Dropout(dropout),
             nn.Linear(self.encoder.config.hidden_size + self.nvdm.num_topics,
                       self.encoder.config.hidden_size, bias=False),
             # nn.GELU() # This is NOT used in paper, but it is used in TF source...

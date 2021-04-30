@@ -85,6 +85,13 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
+        '--dropout',
+        type=float,
+        default=0.1,
+        help='Dropout to apply to the concatenated hidden state of the model. (default: 0.1)'
+    )
+
+    parser.add_argument(
         '--num-epochs', '--epochs',
         type=int,
         default=10,
@@ -233,6 +240,7 @@ if __name__ == '__main__':
         num_warmup_steps=opts['warmup_steps'],
         lr=opts['lr'],
         alpha=opts['alpha'],
+        dropout=opts['dropout'],
         num_epochs=opts['num_epochs'],
         clip=opts['clip'],
         device=opts['device'],

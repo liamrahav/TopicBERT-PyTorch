@@ -5,10 +5,10 @@ from torch.utils.data import Dataset, DataLoader
 from transformers import BertTokenizer
 
 from datasets.vocab import Vocabulary
-
+from datasets.utils import PartitionedDataset
 
 class BOWDataset(Dataset):
-    '''This class servess as a wrapper for an existing dataset that serves
+    '''This class serves as a wrapper for an existing dataset that serves
     a BOW repesentation as well as the original. The BOW conversion is done upon
     instantiation for efficiency when training.
 
@@ -20,21 +20,24 @@ class BOWDataset(Dataset):
             could take.
 
     Args:
-      dataset (:obj:`torch.utils.data.Dataset`): The dataset to convert to BOW.
-        Expects the dataset to yield `(sentence, label)` pairs. Expects the the
-        dataset to have attribute `labels`, an :obj:`Iterable` with the
-        possible labels for any example.
-      vocab (:obj:`Vocabulary`): The vocabulay associated with the dataset.
-      binary (:obj:`bool`, optional): Whether the BOW should maintain a binary
-        representation. If `False`, it will contain word frequencies (integers).
+        dataset (:obj:`torch.utils.data.Dataset`): The dataset to convert to BOW.
+            Expects the dataset to yield `(sentence, label)` pairs. Expects the the
+            dataset to have attribute `labels`, an :obj:`Iterable` with the
+            possible labels for any example.
+        vocab (:obj:`Vocabulary`): The vocabulay associated with the dataset.
+        binary (:obj:`bool`, optional): Whether the BOW should maintain a binary
+            representation. If `False`, it will contain word frequencies (integers).
+        partition_factor (:obj:`int`, optional): Defaults to :obj:`1`. See :obj:`
+            PartitionedDataset` for more information.
+
     '''
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
-    def __init__(self, dataset, vocab, binary=False):
+    def __init__(self, dataset, vocab, binary=False, partition_factor=1):
         self.vocab = vocab
         self.examples = []
         self.labels = list(dataset.labels)
-        for sent, label in dataset:
+        for sent, label in PartitionedDataset(dataset, partition_factor=partition_factor):
             bow = torch.zeros((len(vocab),), dtype=torch.long)
             for word in sent.split(' '):
                 word_index = vocab.words.index(word)

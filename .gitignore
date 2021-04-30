@@ -139,5 +139,9 @@ checkpoints/
 config*.json
 configs/
 
+# Reference models for paper
+train_reference.py
+reference/
+
 # tensorboard
 runs/

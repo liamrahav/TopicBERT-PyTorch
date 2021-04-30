@@ -1,4 +1,45 @@
 '''Utilities for use by modules dealing with handling data.'''
+from torch.utils.data import Dataset
+
+
+class PartitionedDataset(Dataset):
+    '''This class serves as a wrapper for an existing dataset that splits
+    examples in the original dataset up to some partition factor. It truncates
+    sentences from right to left as to avoid creating unnecessary padding.
+
+    Args:
+        dataset (:obj:`torch.utils.data.Dataset`): The dataset to convert to BOW.
+            Expects the dataset to yield `(sentence, label)` pairs.
+        max_length (:obj:`int`, optional): Defaults to :obj:`512`. Sets how long
+            a sentence may be. Partitions are calculated with respect to this.
+        partition_factor (:obj:`int`, optional): Defaults to :obj:`1`. Controls how
+            long examples can be relative to :obj:`max_length`. E.g. if :obj:`
+            partition_factor = 4`, :obj:`BOWDataset` will split examples such that
+            sentences have a max length of :math:`512 / 4 = 128`. It is recommended
+            that this be a power of 2.
+    '''
+    def __init__(self, dataset, max_length=512, partition_factor=1):
+        self.max_length = max_length
+        self.partition_factor = partition_factor
+        sent_len = self.max_length // self.partition_factor
+
+        self.examples = []
+        for sent, label in dataset:
+            if len(sent) > self.max_length:
+                sent = sent[:max_length]
+
+            while len(sent) > sent_len:
+                self.examples.append([sent[-sent_len:], label])
+                sent = sent[:-sent_len]
+
+            self.examples.append([sent, label])
+
+    def __getitem__(self, index):
+        return self.examples[index]
+
+    def __len__(self):
+        return len(self.examples)
+
 
 class TwoWayDict(dict):
     '''Thin wrapper on  `dict` that enforces two-way-ness.

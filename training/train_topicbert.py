@@ -7,6 +7,7 @@ Attributes:
 
 '''
 
+import datetime
 import os
 import sys
 import time
@@ -78,11 +79,11 @@ def gather_performance(model, t_dataset, batch_size=8, num_workers=8, device='cp
     return acc_val, f1_score(all_labels, all_preds, average='macro')
 
 
-def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, alpha=0.9, num_epochs=10, clip=1.,
-          device='cpu', val_frequency=0, val_dataset=None, test_frequency=0, test_dataset=None,
+def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, alpha=0.9, dropout=0.1, num_epochs=10,
+          clip=1., device='cpu', val_frequency=0, val_dataset=None, test_frequency=0, test_dataset=None,
           num_workers=8, should_load_ckpt=False, ckpt_dir=None, tensorboard=True, tensorboard_dir=None,
           verbose=True, silent=False):
-    '''Main training loop for TopicBERT.
+    '''Main training loop for TopicBERT.s
 
     Args:
         dataset (:obj:`datasets.BOWDataset`): The dataset to train on wrapped as a :obj:`BOWDataset`.
@@ -92,8 +93,9 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, alpha=0.9, num_ep
             transformer scheduler.
         lr (:obj:`int`, optional): Set to :obj:`2e-5` by default. Learning rate to be passed to :obj:`AdamW`
             optimizer.
-        alpha (:obj:`int`, optional): Defaults to :obj:`0.9`. See :obj:`TopicBERT` for more information.
+        alpha (:obj:`float`, optional): Defaults to :obj:`0.9`. See :obj:`TopicBERT` for more information.
         num_epochs (:obj:`int`, optional): Set to :obj:`10` by default. Number of epochs to train for.
+        dropout (:obj:`float`, optional): Defaults to :obj:`0.1`. See :obj:`TopicBERT` for more information.
         clip (:obj:`float`, optional): Set to :obj:`1.0` by defualt. Training uses optional gradient clipping
             *by norm*. This means gradients are rescaled with :math:`\\mathbf{g} \\leftarrow \\text{clip}
             \\cdot \\frac{\\mathbf{g}}{\|{\\mathbf{g}}\|}` when :math:`\|{\\mathbf{g}}\| \\geq \\text{clip}`.
@@ -148,7 +150,7 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, alpha=0.9, num_ep
     # TRAIN LOGIC:
     # ============
     model = TopicBERT(len(dataset.vocab), dataset.num_labels,
-                      alpha=alpha).to(device)
+                      alpha=alpha, dropout=dropout).to(device)
     dataloader = dataset.get_dataloader(
         num_workers=num_workers, batch_size=batch_size, shuffle=True)
     total_train_steps = len(dataset) // batch_size * num_epochs
@@ -183,6 +185,7 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, alpha=0.9, num_ep
     best_acc_test = 0.
 
     for epoch in range(start_epoch, num_epochs):
+        epoch_start_time = time.time()
         model.train()
         loss_total = 0.
         num_correct_train = 0
@@ -239,14 +242,18 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, alpha=0.9, num_ep
         loss_avg = loss_total / len(dataloader.dataset)
         acc_train = num_correct_train / len(dataloader.dataset) * 100.
 
+        epoch_time = time.time() - epoch_start_time
+
         # Update tensorboard with per-epoch information
         if tensorboard:
             writer.add_scalar('Accuracy/train', acc_train, epoch + 1)
             writer.add_scalar('LossAvg/train', loss_avg, epoch + 1)
+            writer.add_scalar('EpochTime', epoch_time, epoch + 1)
 
         if verbose:
-            print('Epoch {:3d} | avg loss {:6.4f} | train acc {:4.2f}'.format(
-                epoch + 1, loss_avg, acc_train), end=''
+            time_str = ':'.join(str(datetime.timedelta(seconds=epoch_time)).split(':')[1:3])
+            print('Epoch {:3d} | time {} | avg loss {:6.4f} | train acc {:4.2f}'.format(
+                epoch + 1, time_str, loss_avg, acc_train), end=''
             )
 
         if (epoch + 1) % val_frequency == 0:
