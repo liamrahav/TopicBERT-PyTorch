@@ -28,7 +28,7 @@ class NVDM(nn.Module):
         if isinstance(module, nn.Linear) and module.bias is not None:
             module.bias.data.zero_()
 
-    def __init__(self, vocab_size, num_topics=100, hidden_size=256, hidden_layers=1, nonlinearity=nn.Tanh):
+    def __init__(self, vocab_size, num_topics=100, hidden_size=256, hidden_layers=1, nonlinearity=nn.GELU):
         super().__init__()
         self.num_topics = num_topics
         self.vocab_size = vocab_size
@@ -81,4 +81,4 @@ class NVDM(nn.Module):
         rec_loss = -1 * torch.sum(logits * input_bows, 1)
         loss_nvdm_lb = torch.mean(rec_loss + kld)
 
-        return sample, logits, loss_nvdm_lb
+        return sample, logits, torch.mean(kld), loss_nvdm_lb

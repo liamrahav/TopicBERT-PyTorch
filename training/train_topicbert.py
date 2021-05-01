@@ -63,7 +63,7 @@ def gather_performance(model, t_dataset, batch_size=8, num_workers=8, device='cp
             attention_mask = attention_mask.to(device)
             bows = bows.to(device)
             labels = labels.to(device)
-            logits, _ = model(input_ids, attention_mask, bows, labels)
+            logits, *_ = model(input_ids, attention_mask, bows, labels)
 
             # get label from max score per example
             preds = torch.max(logits, 1)[1]
@@ -178,6 +178,9 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, alpha=0.9, dropou
             range(torch.cuda.device_count())))
         # set primary GPU to free-est one
         device = 'cuda:{}'.format(get_emptiest_gpu())
+        if verbose:
+            print(' [*] Parallel Mode: Using {} GPUs. {} primary device.'.format(
+                torch.cuda.device_count(), device))
 
     loss_avg = float('inf')
     acc_train = 0.
@@ -192,7 +195,6 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, alpha=0.9, dropou
 
         pbar = tqdm(enumerate(BackgroundGenerator(dataloader)),
                     total=len(dataloader))
-        start_time = time.time()
 
         for _, (input_ids, attention_mask, bows, labels) in pbar:
             # Move all data to appropriate device
@@ -200,11 +202,12 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, alpha=0.9, dropou
             attention_mask = attention_mask.to(device)
             bows = bows.to(device)
             labels = labels.to(device)
-            prepare_time = start_time - time.time()
 
             # Compute losses, predctions
-            logits, loss_batch_total = model(
+            m_time = time.time()
+            logits, loss_batch_total, kld = model(
                 input_ids, attention_mask, bows, labels)
+            m_time = time.time() - m_time
 
             # get label from max score per example
             preds = torch.max(logits, 1)[1]
@@ -226,15 +229,15 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, alpha=0.9, dropou
             scheduler.step()  # Update lr.
             optimizer.zero_grad()  # Reset gradient slots to zero
 
-            process_time = start_time - time.time() - prepare_time
             pbar.set_description(
-                f'Compute efficiency: {process_time/(process_time+prepare_time):.2f}, '
                 f'batch loss: {loss_batch_avg.item():.2f},  epoch: {epoch + 1}/{num_epochs}')
-            start_time = time.time()
 
             # Update tensorboard with per-batch information
             if tensorboard:
+                writer.add_scalar('ForwardTime/train', m_time, n_iter)
                 writer.add_scalar('Loss/train', loss_batch_avg.item(), n_iter)
+                writer.add_scalar('KLD/train', kld.item(), n_iter)
+                writer.add_scalar('InputSize/train', input_ids.size()[1], n_iter)
 
             n_iter += 1
 
@@ -251,7 +254,8 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, alpha=0.9, dropou
             writer.add_scalar('EpochTime', epoch_time, epoch + 1)
 
         if verbose:
-            time_str = ':'.join(str(datetime.timedelta(seconds=epoch_time)).split(':')[1:3])
+            time_str = ':'.join(str(datetime.timedelta(
+                seconds=epoch_time)).split(':')[1:3])
             print('Epoch {:3d} | time {} | avg loss {:6.4f} | train acc {:4.2f}'.format(
                 epoch + 1, time_str, loss_avg, acc_train), end=''
             )

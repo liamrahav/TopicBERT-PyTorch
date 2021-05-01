@@ -33,7 +33,7 @@ class TopicBERT(nn.Module):
             nn.Dropout(dropout),
             nn.Linear(self.encoder.config.hidden_size + self.nvdm.num_topics,
                       self.encoder.config.hidden_size, bias=False),
-            # nn.GELU() # This is NOT used in paper, but it is used in TF source...
+            nn.GELU(), # This is NOT used in paper, but it is used in TF source...
             nn.Linear(self.encoder.config.hidden_size, num_labels)
         )
         self.projection.apply(TopicBERT._get_init_transformer(self.encoder))
@@ -63,7 +63,7 @@ class TopicBERT(nn.Module):
             input_ids, attention_mask=attention_mask)[0]
         embs = hiddens_last[:, 0, :]  # [CLS] token embeddings
 
-        h_tm, _, loss_nvdm = self.nvdm(bows)
+        h_tm, _, kld, loss_nvdm = self.nvdm(bows)
 
         # combine hidden states & use/optimize jointly
         logits = self.projection(torch.cat((embs, h_tm), dim=-1))
@@ -71,4 +71,4 @@ class TopicBERT(nn.Module):
         # Runs cross-entropy softmax loss on labels
         loss_bert = self.bert_loss(logits, torch.max(labels, 1)[1])
         loss_total = (self.alpha * loss_bert) + ((1 - self.alpha) * loss_nvdm)
-        return logits, loss_total
+        return logits, loss_total, kld
