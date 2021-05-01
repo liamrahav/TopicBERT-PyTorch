@@ -9,12 +9,13 @@ import numpy as np
 
 import training.train_topicbert as ttb
 from datasets import Vocabulary, Reuters8Dataset, BOWDataset
+from datasets.utils import partition_dataset
 
 if __name__ == '__main__':
     parser = ArgumentParser(
         description='Run experiments with TopicBERT.',
-        epilog='Use -s or --save to PATH generate a reusable JSON config when calling this script.'\
-                ' It can be loaded with -l or --load PATH. \n'
+        epilog='Use -s or --save to PATH generate a reusable JSON config when calling this script.'
+        ' It can be loaded with -l or --load PATH. \n'
     )
 
     parser.add_argument(
@@ -31,20 +32,29 @@ if __name__ == '__main__':
 
     parser.add_argument(
         '--train-dataset-path',
-        help='Path to the file containing training examples. Must be in the format of the dataset'\
-            ' indicated by -d/--dataset.'
+        help='Path to the file containing training examples. Must be in the format of the dataset'
+        ' indicated by -d/--dataset.'
     )
 
     parser.add_argument(
         '--val-dataset-path',
-        help='Path to the file containing validation examples. Must be in the format of the dataset'\
-            ' indicated by -d/--dataset. Not necessary if --val-freq == 0'
+        help='Path to the file containing validation examples. Must be in the format of the dataset'
+        ' indicated by -d/--dataset. Not necessary if --val-freq == 0'
     )
 
     parser.add_argument(
         '--test-dataset-path',
-        help='Path to the file containing test examples. Must be in the format of the dataset'\
-            ' indicated by -d/--dataset. Not necessary if --test-freq == 0'
+        help='Path to the file containing test examples. Must be in the format of the dataset'
+        ' indicated by -d/--dataset. Not necessary if --test-freq == 0'
+    )
+
+    parser.add_argument(
+        '--partition-factor',
+        type=int,
+        default=1,
+        help='How much further to split examples relative to 512. E.g. if partition-factor =='
+        ' 4, examples are partitioned such that they are a maximum of 512 / 4 = 128 tokens long'
+        ' while each partition retains the same label. (default: 1)'
     )
 
     parser.add_argument(
@@ -80,8 +90,8 @@ if __name__ == '__main__':
         metavar='[0, 1]',
         type=float,
         default=0.9,
-        help='Controls how much TopicBERT should weight its own loss or its topic model\'s loss'\
-            ' Must be between 0 and 1. (default: 0.9)'
+        help='Controls how much TopicBERT should weight its own loss or its topic model\'s loss'
+        ' Must be between 0 and 1. (default: 0.9)'
     )
 
     parser.add_argument(
@@ -122,31 +132,31 @@ if __name__ == '__main__':
         '--val-freq',
         type=int,
         default=0,
-        help='How frequently in terms of epochs to gather the model\'s validation set metrics'\
-            ' (default: 0.0)'
+        help='How frequently in terms of epochs to gather the model\'s validation set metrics'
+        ' (default: 0.0)'
     )
 
     parser.add_argument(
         '--test-freq',
         type=int,
         default=0,
-        help='How frequently in terms of epochs to gather the model\'s test set metrics'\
-            ' (default: 0.0)'
+        help='How frequently in terms of epochs to gather the model\'s test set metrics'
+        ' (default: 0.0)'
     )
 
     parser.add_argument(
         '--resume', '--use-checkpoint', '--load-checkpoint',
         metavar='CHECKPOINT_DIR',
         default='',
-        help='If provided, resumes training from the given checkpoint directory. Use'\
-            ' --save-checkpoint-only to just save (no load).'
+        help='If provided, resumes training from the given checkpoint directory. Use'
+        ' --save-checkpoint-only to just save (no load).'
     )
 
     parser.add_argument(
         '--save-checkpoint-only',
         action='store_true',
-        help='If set, will NOT load a checkpoint, but WILL save it to the checkpoint directory'\
-            ' provided at --resume/--use-checkpoint/--load-checkpoint'
+        help='If set, will NOT load a checkpoint, but WILL save it to the checkpoint directory'
+        ' provided at --resume/--use-checkpoint/--load-checkpoint'
     )
 
     parser.add_argument(
@@ -175,8 +185,8 @@ if __name__ == '__main__':
     parser.add_argument(
         '-l', '--load',
         metavar='CONFIG_JSON_PATH',
-        help='Loads command line arguments to this script from a JSON file. Use -s or --save to'\
-            ' create this file with desired settings.'
+        help='Loads command line arguments to this script from a JSON file. Use -s or --save to'
+        ' create this file with desired settings.'
     )
 
     parser.add_argument(
@@ -209,23 +219,35 @@ if __name__ == '__main__':
     val_dataset = None
     test_dataset = None
 
-    vocab = Vocabulary([opts['train_dataset_path'], opts['val_dataset_path'], opts['test_dataset_path']])
+    vocab = Vocabulary([opts['train_dataset_path'],
+                        opts['val_dataset_path'], opts['test_dataset_path']])
     if verbose:
         print(' [*] Vocabulary built.')
 
     if opts['dataset'] == 'reuters8':
-        train_dataset = Reuters8Dataset(opts['train_dataset_path'], opts['label_path'], vocab)
+        train_dataset = Reuters8Dataset(
+            opts['train_dataset_path'], opts['label_path'], vocab)
         train_dataset = BOWDataset(train_dataset, train_dataset.vocab)
         if verbose:
             print(' [*] Train dataset built.')
-        val_dataset = Reuters8Dataset(opts['val_dataset_path'], opts['label_path'], vocab)
+        val_dataset = Reuters8Dataset(
+            opts['val_dataset_path'], opts['label_path'], vocab)
         val_dataset = BOWDataset(val_dataset, val_dataset.vocab)
         if verbose:
             print(' [*] Validation dataset built.')
-        test_dataset =  Reuters8Dataset(opts['test_dataset_path'], opts['label_path'], vocab)
+        test_dataset = Reuters8Dataset(
+            opts['test_dataset_path'], opts['label_path'], vocab)
         test_dataset = BOWDataset(test_dataset, test_dataset.vocab)
         if verbose:
             print(' [*] Test dataset built.')
+
+    pf = opts['partition_factor']
+    if pf > 1:
+        old_size = len(train_dataset)
+        partition_dataset(train_dataset, partition_factor=pf)
+        if verbose:
+            print(' [*] Partitioned training examples by factor of {}. (ex.\'s: {} --> {})'.format(
+                pf, old_size, len(train_dataset)))
 
     # Train
     tensorboard = not opts['disable_tensorboard']

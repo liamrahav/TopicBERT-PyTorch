@@ -1,15 +1,14 @@
 '''Utilities for use by modules dealing with handling data.'''
-from torch.utils.data import Dataset
 
 
-class PartitionedDataset(Dataset):
-    '''This class serves as a wrapper for an existing dataset that splits
-    examples in the original dataset up to some partition factor. It truncates
-    sentences from right to left as to avoid creating unnecessary padding.
+def partition_dataset(dataset, max_length=512, partition_factor=1):
+    '''Splits examples in the original dataset up to some partition factor. It
+    truncates sentences from right to left as to avoid creating unnecessary padding.
 
     Args:
         dataset (:obj:`torch.utils.data.Dataset`): The dataset to convert to BOW.
-            Expects the dataset to yield `(sentence, label)` pairs.
+            Expects the dataset to yield `(sentence, ...)` tuples (it only matters
+            that the sentence is the first element).
         max_length (:obj:`int`, optional): Defaults to :obj:`512`. Sets how long
             a sentence may be. Partitions are calculated with respect to this.
         partition_factor (:obj:`int`, optional): Defaults to :obj:`1`. Controls how
@@ -18,27 +17,23 @@ class PartitionedDataset(Dataset):
             sentences have a max length of :math:`512 / 4 = 128`. It is recommended
             that this be a power of 2.
     '''
-    def __init__(self, dataset, max_length=512, partition_factor=1):
-        self.max_length = max_length
-        self.partition_factor = partition_factor
-        sent_len = self.max_length // self.partition_factor
 
-        self.examples = []
-        for sent, label in dataset:
-            if len(sent) > self.max_length:
-                sent = sent[:max_length]
+    sent_len = max_length // partition_factor
 
-            while len(sent) > sent_len:
-                self.examples.append([sent[-sent_len:], label])
-                sent = sent[:-sent_len]
+    examples = []
+    for sent, *rest in dataset:
+        sent = sent.split(' ')
+        if len(sent) > max_length:
+            sent = sent[:max_length]
 
-            self.examples.append([sent, label])
+        while len(sent) > sent_len:
+            examples.append(
+                [' '.join(sent[-sent_len:])] + rest)
+            sent = sent[:-sent_len]
 
-    def __getitem__(self, index):
-        return self.examples[index]
+        examples.append([' '.join(sent)] + rest)
 
-    def __len__(self):
-        return len(self.examples)
+    dataset.examples = examples
 
 
 class TwoWayDict(dict):
@@ -52,6 +47,7 @@ class TwoWayDict(dict):
         >>> twd[b]
         a
     '''
+
     def __setitem__(self, key, value):
         # Remove any previous connections with these values
         if key in self:
@@ -68,6 +64,7 @@ class TwoWayDict(dict):
     def __len__(self):
         """Returns the number of connections"""
         return dict.__len__(self) // 2
+
 
 def read_tsv(path):
     '''Converts a tab-separated file to Python representation.

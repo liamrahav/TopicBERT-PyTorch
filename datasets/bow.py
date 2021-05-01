@@ -5,7 +5,7 @@ from torch.utils.data import Dataset, DataLoader
 from transformers import BertTokenizer
 
 from datasets.vocab import Vocabulary
-from datasets.utils import PartitionedDataset
+
 
 class BOWDataset(Dataset):
     '''This class serves as a wrapper for an existing dataset that serves
@@ -27,17 +27,14 @@ class BOWDataset(Dataset):
         vocab (:obj:`Vocabulary`): The vocabulay associated with the dataset.
         binary (:obj:`bool`, optional): Whether the BOW should maintain a binary
             representation. If `False`, it will contain word frequencies (integers).
-        partition_factor (:obj:`int`, optional): Defaults to :obj:`1`. See :obj:`
-            PartitionedDataset` for more information.
-
     '''
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
-    def __init__(self, dataset, vocab, binary=False, partition_factor=1):
+    def __init__(self, dataset, vocab, binary=False):
         self.vocab = vocab
         self.examples = []
         self.labels = list(dataset.labels)
-        for sent, label in PartitionedDataset(dataset, partition_factor=partition_factor):
+        for sent, label in dataset:
             bow = torch.zeros((len(vocab),), dtype=torch.long)
             for word in sent.split(' '):
                 word_index = vocab.words.index(word)
