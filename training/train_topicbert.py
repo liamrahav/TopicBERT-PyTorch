@@ -216,6 +216,7 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, alpha=0.9, dropou
             # If parallel, need to manually combine losses across batches
             if 'cuda' in device and torch.cuda.device_count() > 0:
                 loss_batch_total = loss_batch_total.sum()
+                kld = kld.mean()
 
             loss_total += loss_batch_total.item()
 
@@ -237,7 +238,7 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, alpha=0.9, dropou
                 writer.add_scalar('ForwardTime/train', m_time, n_iter)
                 writer.add_scalar('Loss/train', loss_batch_avg.item(), n_iter)
                 writer.add_scalar('KLD/train', kld.item(), n_iter)
-                writer.add_scalar('InputSize/train', input_ids.size()[1], n_iter)
+                writer.add_scalar('InputSize/train', input_ids.size(1), n_iter)
 
             n_iter += 1
 

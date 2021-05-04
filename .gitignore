@@ -144,5 +144,4 @@ train_reference.py
 reference/
 
 # tensorboard
-runs/
-old_runs/
+run*/

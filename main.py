@@ -199,7 +199,8 @@ if __name__ == '__main__':
     opts = vars(parser.parse_args())
     if opts['load']:
         with open(opts['load'], 'r') as f:
-            opts = json.loads(f.read())
+            for key, val in json.loads(f.read()).items():
+                opts[key] = val
     elif opts['save']:
         with open(opts['save'], 'w') as f:
             f.write(json.dumps(opts))

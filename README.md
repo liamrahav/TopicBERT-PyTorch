@@ -53,7 +53,7 @@ Sample `config.json`:
 
 ------
 
-## Roadmap
+## Roadmap (DONE)
 
 - [X] Have working BERT on some dataset (SST-2)
     - Completed on 4/8/21, Liam
@@ -72,9 +72,16 @@ Sample `config.json`:
 - [X] Move from Jupyter to Python modules
     - All "modules" converted, 4/25/21, Liam. 
     - `training` package and `main.py` complete, 4/26/21, Liam.
-- [ ] Measure performance baselines
+- [X] Measure performance baselines
+    - All baselines finalized, 5/3/21, Liam.
 
-Once we're here, it means we are ready to begin working on novel extensions.
+Happy to report that the model has performance (runtime & accuracy) characteristics as expected! 
+
+Extension Ideas:
+- Pre-train VAE
+    - Will likely require more complex VAE architecture to account for posterior collapse
+- Test new datasets in topic classification
+- Test datasets in a different domain (e.g. NLI, GLUE)
 
 -----
 
@@ -85,5 +92,5 @@ This section maintains a (non-definitive) list of differences between the origin
 - `F_MIN` set to `10` on Reuters8 dataset yields a vocab size of `K = 4832` rather than `K = 4813` reported in the original paper, despite following the same text-cleaning guidelines. We assume this will not significantly affect results.
 - The original authors use `bert-base-cased`. As all data is lowercased across datasets in the original experiments, we change this to `bert-base-uncased`.
 - Labels are encoded one-hot. We use `torch.max(...)[1]` to extract prediction & label indices. These indices can be converted back and forth with label strings via the `Reuters8Dataset` class (`dataset.label_mapping[index]` and `dataset.label_mapping[label_str]`).
-- NVDM in the original paper uses `tanh` activation for multiliayer perceptron in NVDM. However, the author's TensorFlow implementation uses `sigmoid`. We stick with `tanh`, as the NVDM paper ([Miao et al. 2016](https://arxiv.org/pdf/1511.06038.pdf)) uses this as well.
-- TopicBERT as described in the paper has a projection layer consisting of a single matrix $\mathbf{P} \in \mathbf{R}^{\hat{H} \times H_B}$. We stick with this architecture but add GELU activation after $\mathbf{P}$. The original author's TensorFlow implementation utilizes a `tf.keras.layers.Dense` layer, which adds a bias vector and GELU activation after $\mathbf{P}$.
+- NVDM in the original paper uses `tanh` activation for multiliayer perceptron in NVDM. However, the author's TensorFlow implementation uses `sigmoid`. We use `GELU`, as the NVDM paper ([Miao et al. 2016](https://arxiv.org/pdf/1511.06038.pdf)) uses this as well.
+- TopicBERT as described in the paper has a projection layer consisting of a single matrix $\mathbf{P} \in \mathbf{R}^{\hat{H} \times H_B}$. We add `GELU` activation after $\mathbf{P}$. The original author's TensorFlow implementation utilizes a `tf.keras.layers.Dense` layer, which adds a bias vector and `GELU` activation after $\mathbf{P}$.
