@@ -145,3 +145,7 @@ reference/
 
 # tensorboard
 run*/
+
+# Uneeded (easily downloadable) datasets
+raw_data/
+!raw_data/Reuters8

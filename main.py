@@ -8,7 +8,7 @@ import torch
 import numpy as np
 
 import training.train_topicbert as ttb
-from datasets import Vocabulary, Reuters8Dataset, BOWDataset
+from datasets import Vocabulary, Reuters8Dataset, IMDBDataset, BOWDataset
 from datasets.utils import partition_dataset
 
 if __name__ == '__main__':
@@ -21,8 +21,9 @@ if __name__ == '__main__':
     parser.add_argument(
         '-d', '--dataset',
         default='reuters8',
-        choices=['reuters8'],
-        help='Which Dataset wrapper to use (DO NOT USE UNLESSS MORE DATASETS ARE ADDED).'
+        choices=['reuters8', 'imdb'],
+        help='Which Dataset wrapper to use. If using IMDB, just pass the directory where IMDB files'
+        ' are (or should be, will download automaticaly) as --train-dataset-path'
     )
 
     parser.add_argument(
@@ -220,12 +221,12 @@ if __name__ == '__main__':
     val_dataset = None
     test_dataset = None
 
-    vocab = Vocabulary([opts['train_dataset_path'],
-                        opts['val_dataset_path'], opts['test_dataset_path']])
-    if verbose:
-        print(' [*] Vocabulary built.')
-
     if opts['dataset'] == 'reuters8':
+        vocab = Vocabulary.from_files([opts['train_dataset_path'],
+                                       opts['val_dataset_path'], opts['test_dataset_path']])
+        if verbose:
+            print(' [*] Vocabulary built.')
+
         train_dataset = Reuters8Dataset(
             opts['train_dataset_path'], opts['label_path'], vocab)
         train_dataset = BOWDataset(train_dataset, train_dataset.vocab)
@@ -238,6 +239,17 @@ if __name__ == '__main__':
             print(' [*] Validation dataset built.')
         test_dataset = Reuters8Dataset(
             opts['test_dataset_path'], opts['label_path'], vocab)
+        test_dataset = BOWDataset(test_dataset, test_dataset.vocab)
+        if verbose:
+            print(' [*] Test dataset built.')
+    elif opts['dataset'] == 'imdb':
+        train_dataset, val_dataset, test_dataset = IMDBDataset.full_split(opts['train_dataset_path'])
+        train_dataset = BOWDataset(train_dataset, train_dataset.vocab)
+        if verbose:
+            print(' [*] Train dataset built.')
+        val_dataset = BOWDataset(val_dataset, val_dataset.vocab)
+        if verbose:
+            print(' [*] Validation dataset built.')
         test_dataset = BOWDataset(test_dataset, test_dataset.vocab)
         if verbose:
             print(' [*] Test dataset built.')

@@ -8,15 +8,13 @@ from datasets.utils import read_tsv
 
 
 class Vocabulary():
-    '''Creates a dictionary-like vocabulary from a raw, tab-separated dataset.
+    '''Creates a dictionary-like vocabulary from a list of text (string) examples.
 
     `Vocabulary` is essentially a wrapper on the builtin `Counter` class. This class
     implements __getitem__, which returns the frequency of a given word.
 
     Args:
-        filenames (:obj:`list` of :obj:`str`): Names of TSV files making up the full
-            dataset whose vocabulary you want to index. Typically 'train', 'val', and
-            'test' files.
+
         col_num (:obj:`int`, optional): Set to `1` by default. The column in the TSV
             containing raw text. This starts from 0 (e.g. 1 is the 2nd column).
         lowercase (:obj:`bool`, optional): Set to `True` by default. If `True`, will
@@ -29,15 +27,8 @@ class Vocabulary():
 
     '''
 
-    def __init__(self, filepaths, col_num=1, lowercase=True, include_stopwords=False, f_min=10):
-        texts = []
-        if not filepaths:
-            raise ValueError('filepaths must contain at least one file')
-
-        for filepath in filepaths:
-            texts += [x[col_num] for x in read_tsv(filepath)]
-
-        words = [word.lower() for text in texts for word in text.split(' ')]
+    def __init__(self, examples, lowercase=True, include_stopwords=False, f_min=10):
+        words = [word.lower() for ex in examples for word in ex.split(' ')]
 
         if not include_stopwords:
             # remove stopwords, newline
@@ -47,6 +38,26 @@ class Vocabulary():
 
         c = Counter(words)
         self._vocab = Counter({k: c for k, c in c.items() if c >= f_min})
+
+
+    @classmethod
+    def from_files(cls, filepaths, col_num=1, lowercase=True, include_stopwords=False, f_min=10):
+        '''Creates a dictionary-like vocabulary from a raw, tab-separated dataset.
+
+        Args:
+            filenames (:obj:`list` of :obj:`str`): Names of TSV files making up the full
+            dataset whose vocabulary you want to index. Typically 'train', 'val', and
+            'test' files.
+            **kwargs: See initializer
+        '''
+        texts = []
+        if not filepaths:
+            raise ValueError('filepaths must contain at least one file')
+
+        for filepath in filepaths:
+                texts += [x[col_num] for x in read_tsv(filepath)]
+
+        return cls(texts, lowercase=lowercase, f_min=f_min, include_stopwords=include_stopwords)
 
     @property
     def words(self):

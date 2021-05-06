@@ -75,7 +75,7 @@ def gather_performance(model, t_dataset, batch_size=8, num_workers=8, device='cp
             all_labels = np.concatenate(
                 (all_labels, labels.cpu().numpy()), axis=None)
 
-    acc_val = num_correct_val / len(t_dataloader.dataset) * 100.
+    acc_val = num_correct_val.item() / len(t_dataloader.dataset) * 100.
     return acc_val, f1_score(all_labels, all_preds, average='macro')
 
 
@@ -83,7 +83,7 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, alpha=0.9, dropou
           clip=1., device='cpu', val_frequency=0, val_dataset=None, test_frequency=0, test_dataset=None,
           num_workers=8, should_load_ckpt=False, ckpt_dir=None, tensorboard=True, tensorboard_dir=None,
           verbose=True, silent=False):
-    '''Main training loop for TopicBERT.s
+    '''Main training loop for TopicBERT.
 
     Args:
         dataset (:obj:`datasets.BOWDataset`): The dataset to train on wrapped as a :obj:`BOWDataset`.
@@ -244,7 +244,9 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, alpha=0.9, dropou
 
         # Useful per-epoch training information
         loss_avg = loss_total / len(dataloader.dataset)
-        acc_train = num_correct_train / len(dataloader.dataset) * 100.
+        if verbose:
+            print('NUM CORRECT:', num_correct_train.item(), '\nTOTAL EX\'S:',len(dataloader.dataset))
+        acc_train = num_correct_train.item() / len(dataloader.dataset) * 100.
 
         epoch_time = time.time() - epoch_start_time
 
