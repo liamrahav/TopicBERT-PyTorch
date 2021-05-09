@@ -10,6 +10,7 @@ import numpy as np
 import training.train_topicbert as ttb
 from datasets import Vocabulary, Reuters8Dataset, IMDBDataset, BOWDataset
 from datasets.utils import partition_dataset
+from vae_main import run_vae_pretrain
 
 if __name__ == '__main__':
     parser = ArgumentParser(
@@ -196,6 +197,16 @@ if __name__ == '__main__':
         help='Saves command line arguments given to this script as a JSON config file.'
     )
 
+    subparsers = parser.add_subparsers()
+    pretrain_parser = subparsers.add_parser(
+        'pretrain-vae', help='Command for pre-training HR-VAE. Only has one additional parameter.')
+    pretrain_parser.add_argument(
+        '--emb-size',
+        help='Size of token embeddings in the VAE',
+        type=int,
+        default=512,
+    )
+
     # Get options, load/save JSON config file if flagged
     opts = vars(parser.parse_args())
     if opts['load']:
@@ -215,6 +226,10 @@ if __name__ == '__main__':
         torch.manual_seed(opts['seed'])
         if torch.cuda.is_available():
             torch.cuda.manual_seed_all(opts['seed'])
+
+    if 'pretrain-vae' in sys.argv[1:]:
+        run_vae_pretrain(opts)
+        sys.exit(0)
 
     # Construct datasets
     train_dataset = None
@@ -243,7 +258,8 @@ if __name__ == '__main__':
         if verbose:
             print(' [*] Test dataset built.')
     elif opts['dataset'] == 'imdb':
-        train_dataset, val_dataset, test_dataset = IMDBDataset.full_split(opts['train_dataset_path'])
+        train_dataset, val_dataset, test_dataset = IMDBDataset.full_split(
+            opts['train_dataset_path'])
         train_dataset = BOWDataset(train_dataset, train_dataset.vocab)
         if verbose:
             print(' [*] Train dataset built.')

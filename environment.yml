@@ -1,4 +1,4 @@
-name: topicbert2
+name: topicbert
 channels:
   - pytorch
   - contango
