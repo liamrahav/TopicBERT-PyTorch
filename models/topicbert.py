@@ -69,6 +69,6 @@ class TopicBERT(nn.Module):
         logits = self.projection(torch.cat((embs, h_tm), dim=-1))
 
         # Runs cross-entropy softmax loss on labels
-        loss_bert = self.bert_loss(logits, torch.max(labels, 1)[1])
-        loss_total = (self.alpha * loss_bert) + ((1 - self.alpha) * loss_nvdm)
+        loss_bert = self.bert_loss(logits, labels.max(1).indices)
+        loss_total = (self.alpha * loss_bert) + ((1. - self.alpha) * loss_nvdm)
         return logits, loss_total, kld

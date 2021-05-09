@@ -77,9 +77,11 @@ Sample `config.json`:
 
 Happy to report that the model has performance (runtime & accuracy) characteristics as expected! 
 
-Extension Ideas:
-- Pre-train VAE
-    - Will likely require more complex VAE architecture to account for posterior collapse
+Non-modification Extensions Pursued:
+- Pre-train VAE.
+    - Implemented [HR-VAE](https://arxiv.org/pdf/1911.05343.pdf) as comptatible model with TopicBERT. Currently have ability for the TopicBERT main script to pre-train an HR-VAE model on a dataset. 5/8/21, Liam.
+
+More Extension Ideas:
 - Test new datasets in topic classification
 - Test datasets in a different domain (e.g. NLI, GLUE)
 

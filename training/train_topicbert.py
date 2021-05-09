@@ -66,8 +66,8 @@ def gather_performance(model, t_dataset, batch_size=8, num_workers=8, device='cp
             logits, *_ = model(input_ids, attention_mask, bows, labels)
 
             # get label from max score per example
-            preds = torch.max(logits, 1)[1]
-            labels = torch.max(labels, 1)[1]
+            preds = logits.max(1).indices
+            labels = labels.max(1).indices
             num_correct_val += (preds == labels).sum()
 
             all_preds = np.concatenate(
@@ -210,8 +210,8 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, alpha=0.9, dropou
             m_time = time.time() - m_time
 
             # get label from max score per example
-            preds = torch.max(logits, 1)[1]
-            num_correct_train += (preds == torch.max(labels, 1)[1]).sum()
+            preds = logits.max(1).indices
+            num_correct_train += (preds == labels.max(1).indices).sum()
 
             # If parallel, need to manually combine losses across batches
             if 'cuda' in device and torch.cuda.device_count() > 0:
@@ -242,13 +242,13 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, alpha=0.9, dropou
 
             n_iter += 1
 
+        epoch_time = time.time() - epoch_start_time
+
         # Useful per-epoch training information
         loss_avg = loss_total / len(dataloader.dataset)
         if verbose:
-            print('NUM CORRECT:', num_correct_train.item(), '\nTOTAL EX\'S:',len(dataloader.dataset))
+            print('NUM CORRECT:', num_correct_train.item(), '\nTOTAL EX\'S: ', len(dataloader.dataset))
         acc_train = num_correct_train.item() / len(dataloader.dataset) * 100.
-
-        epoch_time = time.time() - epoch_start_time
 
         # Update tensorboard with per-epoch information
         if tensorboard:
@@ -288,6 +288,7 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, alpha=0.9, dropou
             if tensorboard:
                 writer.add_scalar('Accuracy/test', acc_test, epoch + 1)
                 writer.add_scalar('F1/test', f1_test, epoch + 1)
+                writer.flush()
 
             if verbose:
                 print(' | test acc {:4.2f} | test F1 {:4.2f}'.format(
@@ -305,12 +306,15 @@ def train(dataset, batch_size=8, num_warmup_steps=10, lr=2e-5, alpha=0.9, dropou
                 'sched': scheduler.state_dict()
             }
             save_ckpt(cpkt, ckpt_dir)
+            if verbose:
+                print('Saved checkpoint!')
 
     if silent:
         # Reset stdout before function exit
         sys.stdout = std_out
 
     if tensorboard:
+        writer.flush()
         writer.close()
 
     if verbose:
