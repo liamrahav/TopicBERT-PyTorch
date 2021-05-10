@@ -83,11 +83,11 @@ def _run_epoch(encoder, decoder, opt, dataloader, epoch, device='cuda', verbose=
     words_total = 0
     batch_total = 0
 
-    pbar = tqdm(enumerate(BackgroundGenerator(dataloader)),
-                total=len(dataloader))
+    # pbar = tqdm(,
+    #             total=len(dataloader))
 
     start_time = time.time()
-    for i, sen in pbar:
+    for i, sen in enumerate(BackgroundGenerator(dataloader)):
         # sen = sen.permute(1, 0)
         # sen: [len_sen, batch]
         batch_size = sen.shape[1]
@@ -112,7 +112,7 @@ def _run_epoch(encoder, decoder, opt, dataloader, epoch, device='cuda', verbose=
         ((vae_loss+recon_loss)*1).backward()
         opt.step()
 
-        pbar.set_description(desc='Epoch: {}/{}'.format(epoch))
+        # pbar.set_description(desc='Epoch: {}'.format(epoch))
 
         recon_loss_total += recon_loss.item()
         vae_loss_total += vae_loss.item()
@@ -123,11 +123,15 @@ def _run_epoch(encoder, decoder, opt, dataloader, epoch, device='cuda', verbose=
         words_total = words_total + words
         batch_total += batch_size
 
+        if i % 10 == 0:
+            print('.', end='')
+    print('')
+
     end_time = time.time()
 
     epoch_mins, epoch_secs = epoch_time(start_time, end_time)
     print(
-        f"Time: {epoch_mins}m {epoch_secs}s| Epoch {epoch}: recon_loss={(recon_loss_total/(batch_total)):.04f}, kl_loss={(vae_loss_total/(batch_total)):.04f}, nll_loss={((recon_loss_total+vae_loss_total)/(batch_total)):.04f}, ppl={(math.exp((recon_loss_total+vae_loss_total)/words_total)):.04f}, acc={(correct_total/words_total):.04f}")
+        f"Epoch {epoch} | Time: {epoch_mins}m {epoch_secs}s | recon_loss={(recon_loss_total/(batch_total)):.04f}, kl_loss={(vae_loss_total/(batch_total)):.04f}, nll_loss={((recon_loss_total+vae_loss_total)/(batch_total)):.04f}, ppl={(math.exp((recon_loss_total+vae_loss_total)/words_total)):.04f}, acc={(correct_total/words_total):.04f}")
     return recon_loss_total/(batch_total), vae_loss_total/(batch_total), correct_total/words_total, (recon_loss_total+vae_loss_total)/(batch_total), math.exp((recon_loss_total+vae_loss_total)/words_total), end_time - start_time
 
 
@@ -179,8 +183,8 @@ def pretrain(dataset, val_dataset=None, test_dataset=None, emb_size=512, hidden_
             print(' [*] Parallel Mode: Using {} GPUs. {} primary device.'.format(
                 torch.cuda.device_count(), device))
 
-    best_ppl_val = 0
-    best_ppl_test = 0
+    best_ppl_val = 1e9
+    best_ppl_test = 1e9
     for epoch in range(start_epoch, num_epochs):
         recon_loss, vae_loss, acc, nll_loss, ppl, runtime = _run_epoch(
             encoder, decoder, optimizer, dataloader, epoch, device=device, verbose=verbose)
@@ -200,7 +204,7 @@ def pretrain(dataset, val_dataset=None, test_dataset=None, emb_size=512, hidden_
                 writer.add_scalar('Perplexity/val', val_ppl, epoch)
 
         # Save model if ckpt_dir is set & performance is best
-        if ckpt_dir and val_ppl < best_ppl_val:
+        if ckpt_dir and (val_ppl < best_ppl_val):
             cpkt = {
                 'encoder': encoder.state_dict(),
                 'decoder': decoder.state_dict(),
@@ -208,6 +212,7 @@ def pretrain(dataset, val_dataset=None, test_dataset=None, emb_size=512, hidden_
                 'optim': optimizer.state_dict(),
             }
             save_ckpt(cpkt, ckpt_dir)
+            best_ppl_val = val_ppl
             if verbose:
                 print('Saved checkpoint!')
 
